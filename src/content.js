@@ -13,6 +13,13 @@ let contentTwo = {
     projectIndex: 2
 } 
 
+let contentThree = {
+    projectName: "A nother Proj",
+    projectTasks: ["Deep Space Exploration", "Finding Nirvana", "Trip To New York City"],
+    projectIndex: 3
+}
+
 
 projects.push(contentOne)
 projects.push(contentTwo)
+projects.push(contentThree)

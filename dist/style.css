@@ -48,6 +48,10 @@ body {
     background-color: bisque;
 }
 
+input {
+    background-color: rgb(202, 181, 157);
+}
+
 .projects-container {
     gap:5px;
     align-items: start;
