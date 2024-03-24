@@ -1,5 +1,11 @@
 export let projects = [];
-export const tasksList = ["Add Task", "Search", "Refresh"]
+export const tasksList = [""]
+
+export let newProject = {
+    projectName: "New Project",
+    projectTasks: ["New Task"],
+    projectIndex: "new"
+}
 
 let contentOne  = {
     projectName: "First Project A",
@@ -13,13 +19,7 @@ let contentTwo = {
     projectIndex: 2
 } 
 
-let contentThree = {
-    projectName: "A nother Proj",
-    projectTasks: ["Deep Space Exploration", "Finding Nirvana", "Trip To New York City"],
-    projectIndex: 3
-}
 
 
 projects.push(contentOne)
 projects.push(contentTwo)
-projects.push(contentThree)
