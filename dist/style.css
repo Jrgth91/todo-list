@@ -46,6 +46,9 @@ body {
     display: flex;
     flex-direction: column;
     background-color: bisque;
+    gap: 5px;
+    border-radius: 5px;
+    padding: 5px;
 }
 
 .project-edit {
@@ -88,8 +91,27 @@ input {
     display: flex;
     justify-content: space-between;
 }
+
+.taskTitle {
+    display: flex;
+    justify-content: space-between;
+}
+
+.statusContainer {
+    display: flex;
+}
+
+.tasks-container {
+    display: none;
+}
+
+.taskContainer {
+    padding: 5px 0 5px 0;
+}
+.centerLine {
+    text-align: center;
+}
 /* 
 #projects-content {
     display: none;
 } */
-

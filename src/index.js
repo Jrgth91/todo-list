@@ -1,12 +1,13 @@
-import { defineDivStyles, updateListsDisplay, toggleColor, viewAllProjects, toggleDisplayClickEvent, tasksBar, tasksContent, updateContent, addToProjects, removeClickEvents, projectsContent, projectsBar } from "./div";
+import { defineDivStyles, updateListsDisplay, toggleColor, viewAllProjects, toggleDisplayVisibility, tasksBar, tasksContent, updateContent, 
+addToProjects, removeClickEvents, projectsContent, projectsBar, statusUpdates, startEvent } from "./div";
 import { projects, tasksList } from "./content";
 
-
-toggleDisplayClickEvent(tasksBar, tasksContent);
-toggleDisplayClickEvent(projectsBar, projectsContent); 
+toggleDisplayVisibility()
 toggleColor(projectsBar, "rgb(69, 136, 115)", "rgb(104, 209, 176)");
 defineDivStyles();
 updateListsDisplay(projects, projectsContent)
 updateListsDisplay(tasksList, tasksContent);
+statusUpdates.setViewAll(true);
 updateContent();
+startEvent();
 viewAllProjects();
