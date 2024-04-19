@@ -1,485 +1,378 @@
-// NOTES
-// To show a single project call this updateSingleProjectView(index)  index of the project to update display
-
-import { projects, tasksList, newProject,} from "./content"
-
-//Declare Dom Elements
-const body = document.body
-const leftGrid = document.querySelector(".left")
-const rightGrid = document.querySelector(".right")
-const userBar = document.querySelector("#user-bar")
-export const tasksBar = document.getElementById("tasks-bar")
-export const projectsBar = document.getElementById("projects-bar")
-export const tasksContent = document.getElementById("tasks-content")
-const mainContainer = document.getElementById("main-container")
-export const projectsContent = document.getElementById("projects-content")
-export const viewAll = document.getElementById("view-all")
-const addNewProjectButton = document.getElementById("add-new-project")
-
-//One Line Div Creation Function
-const CreateDiv = function(divClassName, innerTxt, id, key) {
-    const div = document.createElement("div")
-    div.className = divClassName
-    div.innerHTML = innerTxt
-    div.id = id
-    div.dataset.key = key
-    return div
-}
-
-//One Line Input Creating Function
-const CreateInput = function(divClassName, innerTxt, id, key, data) {
-    const input = document.createElement("input")
-    input.className = divClassName
-    input.innerHTML = innerTxt
-    input.type = "text"
-    input.name = data
-    input.id = id
-    input.dataset.key = key
-    return input
-}
-
-//Clears Displays
-const containerUtilities = {
-    clearMainContainer() {
-        mainContainer.innerHTML = ""
-    },
-    clearListContainer(content) {
-        content.innerHTML = ""
-    }
-}
-
-//Resets Object (newProject)
-const clearObject = function(object) {
-    object.projectName = "New Project"
-    object.projectTasks = [
-        {name: "Task Name", description: "Task Description", status: "Not Complete"},
-    ]
-    object.projectIndex = "new"
-}
-
-//Sets some conditional bools
-export const statusUpdates = {
-    viewAll: false,
-    clickedSave: false,
-    setViewAll(bool) {
-        if (bool) {
-            this.viewAll = true
-        } else {
-            this.viewAll = false
-        }
-    },
-    setClickedSave(bool) {
-        if (bool) {
-            this.clickedSave = true
-        } else {
-            this.clickedSave = false
-    }
-}
-
-}
-
-//Creates and appends divs for viewing project or projects
-const setDivsForDisplayUpdates = function(target) {
-    const divElements = []
-    const index = target
-    const mainDiv = CreateDiv("project-grid","",index, "" )
-    const projectTitleContainer = CreateDiv("project-title-container", "","","")
-    const projectTitle = CreateDiv("project-title", projects[index].projectName )
-    const deleteProject = CreateDiv("delete-project-button", "X", "delete-project", index)
-    const editButton = CreateDiv("edit-button", "Edit", "edit", index)
-    projectTitleContainer.appendChild(projectTitle)
-    projectTitleContainer.appendChild(editButton)
-    projectTitleContainer.appendChild(deleteProject)
-    mainDiv.appendChild(projectTitleContainer);
-
-    divElements.push(index)
-    divElements.push(mainDiv)
-    divElements.push(projectTitleContainer)
-    divElements.push(projectTitle)
-    divElements.push(deleteProject)
-    divElements.push(editButton)
-    
-    return divElements
-}
-
-const addNewProject = function(index) {
-    containerUtilities.clearMainContainer()
-    const newDiv = CreateDiv("project-edit","","new-project", "" )
-    const editProjectContainer = CreateDiv("project-title-container", "","","")
-    const editProjectTitle = CreateInput("project-title", newProject.projectName,"edit-title" )
-    const saveButton = CreateDiv("save-button", "Save", "save-button", "")
-    const addTaskButton = CreateDiv("add-task-button", "Add Task", "add-task")
-    saveButton.dataset.key = index
-    editProjectTitle.innerHTML = `<input type="text" id="name" name="name" required minlength="4" maxlength="8" size="10" />`
-    editProjectTitle.value = newProject.projectName
-    // const deleteProject = CreateDiv("delete-project-button", "X", "delete-project", index)
-    saveButton.addEventListener("click", function(e) {
-        statusUpdates.setClickedSave(true);
-            saveProject(newProject)
-    })
-
-    addTaskButton.addEventListener("click", function() {
-        let obj = {name: "Task Name", description: "Task Description", status: "Not Completed"}
-        newProject.projectTasks.push(obj)
-        //This allows us to save whatever tasks we edited when we add a new task. 
-        // This cycles every project task minus the last one added (New Task) because
-        // New Task doesnt have a div assigned to it yet as we havent called editProject yet. 
-        const word = document.getElementById("edit-title").value
-        newProject.projectName = word
-        for (let i = 0; i < newProject.projectTasks.length - 1; i++) {
-            newProject.projectTasks[i].name = document.getElementById(`taskName${i}`).value
-            newProject.projectTasks[i].description = document.getElementById(`taskDescription${i}`).value
-            }
-        editProject(newProject, newDiv, editProjectContainer, newProject.projectName, 0, index);
-    })
-    editProjectContainer.appendChild(editProjectTitle)
-    editProjectContainer.appendChild(addTaskButton)
-    editProjectContainer.appendChild(saveButton)
-    newDiv.appendChild(editProjectContainer);
-    editProjectTasks(newProject, newDiv,)
-    mainContainer.appendChild(newDiv)
-
-}
+import { projects, newProject } from "./content"
+const PROJECT_TEMPLATE = document.getElementById("projectTemplate")
+const TASK_TEMPLATE = document.getElementById("taskTemplate")
+const projectsContainer = document.querySelector(".projects-container")
+const completedTasksContainer = document.querySelector(".completed-tasks-container")
 
 
-export const updateListsDisplay = function(list, listContainer) {
-    containerUtilities.clearListContainer(listContainer)
-    let index = 0;
-    list.forEach(task => {
-            if (task.projectName) {
-                let div = CreateDiv("list-buttons", task.projectName, "", index)
-                listContainer.appendChild(div)
-                index++
-            } else {
-                let div = CreateDiv("list-buttons", task, "", index)
-                listContainer.appendChild(div)
-                index++
-            }
-    });
-    addNewProjectButton.style.backgroundColor = "rgb(104, 209, 176)"
-    addNewProjectButton.addEventListener("click", function() {
+//// THIS MAKES NO SENSE ITS MOVING EVERYTHING TO THE TASK CONTAINER!? 
+function updateCompletedTasksList() {
+    completedTasksContainer.innerHTML = ""
+    for (const project of projects) {
+        const projectListContainer = document.createElement("div")
+        const projectNameDiv = document.createElement("div")
+        const tasksContainerDiv = document.createElement("div")
 
-        addNewProject(projects.length)
-    })
-}
-export const updateContent = function() {
-    // console.log("View All Boolean = " + setViewAll)
-    if (!statusUpdates.viewAll) {
-        if (statusUpdates.clickedSave) {
-            viewSingleProject("save");
-        } else {
-            viewSingleProject("view");
-        }
-        
-    } else {
-        updateViewAllProjects(0);
-    }
-}
+        projectListContainer.className = "tasks-list-container"
 
-function viewSingleProject(action) {
-    containerUtilities.clearMainContainer();
-    viewAll.style.backgroundColor = "rgb(104, 209, 176)"
-    viewSingleProjectEvListener(action);
-}
+        projectNameDiv.className = "completed-task-project-name"
 
+        projectNameDiv.id = projects.indexOf(project)
+        projectNameDiv.innerHTML = project.projectName
 
-const viewSingleProjectEvListener = function(action) {
-    if (action === "view") {
-        projectsContent.addEventListener("click", function(e){
-            if (e.target.dataset.key !== undefined) {
-                // console.log(e.target.dataset.key)
-                updateSingleProjectView(e.target.dataset.key)
-            }
-        })
-    } else {
-        mainContainer.addEventListener("click", function(e){
-            if (e.target.id === "save-button") {
-                // console.log(e.target.dataset.key)
-                updateSingleProjectView(e.target.dataset.key)
-            }
-        })
-    }
+        for (const task of project.projectTasks) {
+            if (task.status === true) {
+                const taskDiv = document.createElement("div")
+                taskDiv.innerHTML = task.name
+                tasksContainerDiv.appendChild(taskDiv)
+                let selector = `${project.projectName}`
+                selector = selector.replace(/ /g,"_");
 
-}
+                console.log(selector)
 
+                if (!document.getElementById(selector)) {
+                    projectListContainer.appendChild(projectNameDiv)
+                    projectListContainer.appendChild(tasksContainerDiv)
+                    completedTasksContainer.appendChild(projectListContainer)
 
-const updateSingleProjectView = function(target) {
-    statusUpdates.setViewAll(false);
-            viewAll.style.backgroundColor = "rgb(104, 209, 176)"
-            containerUtilities.clearMainContainer()
-            const myDivs = setDivsForDisplayUpdates(target)
-            myDivs[4].addEventListener('click', () => {
-                removeProject(projects[target].projectIndex);
-            })
-
-            myDivs[5].addEventListener("click", function() {
-                editProject(projects[target], myDivs[1], myDivs[2], projects[target].projectName, target, target);
-            })
-
-            updateProjectTasks(projects[target], myDivs[1]);
-            
-            mainContainer.appendChild(myDivs[1])
-}
-
-const projectsSection = function() {
-    const content = CreateDiv("projects-bar", "Projects Bar")
-    return content
-}
-
-export const defineDivStyles = function() {
-    projectsContent.style.display = "none"
-    projectsBar.style.backgroundColor = "rgb(104, 209, 176)"
-}
-
-export const toggleDisplayVisibility = function() {
-    tasksBar.addEventListener("click", function() {
-        if (tasksContent.style.display === "none") {
-            tasksContent.style = 'display:';
-        } else {
-            tasksContent.style.display = "none"
-        }
-    })
-    projectsBar.addEventListener("click", function() {
-        if (projectsContent.style.display === "none") {
-            projectsContent.style = 'display:';
-        } else {
-            projectsContent.style.display = "none"
-        }
-    })
-
-}
-
-export const toggleColor = function(button, colorOne, colorTwo) {
-    button.addEventListener("click", function() {
-        if (button.style.backgroundColor === colorOne) {
-            button.style.backgroundColor = colorTwo;
-
-        } else {
-            button.style.backgroundColor = colorOne
-        }
-    })
-}
-    
-function removeProject(name) {
-    projects = projects.filter(project => project.projectIndex !== name)
-    updateContent();
-    updateListsDisplay(projects, projectsContent)
-}
-
-function removeTask(project, task, index) {
-    const removeTask = project.projectTasks.indexOf(task)
-    project.projectTasks.splice(removeTask, 1)
-
-}
-
-const updateViewAllProjects = function(index) {
-    containerUtilities.clearMainContainer();
-    projects.forEach(project => {
-        const myDivs = setDivsForDisplayUpdates(index)
-        myDivs[4].addEventListener('click', () => {
-            removeProject(project.projectIndex);
-        })
-
-        myDivs[5].addEventListener("click", function() {
-            editProject(project, myDivs[1], myDivs[2], project.projectName, myDivs[4].dataset.key, myDivs[4].dataset.key);
-        })
-
-        updateProjectTasks(project, myDivs[1], index);
-        
-        viewAll.style.backgroundColor = "rgb(69, 136, 115)";
-        mainContainer.appendChild(myDivs[1])
-        index++;
-});
-// console.log("After View All Projects Display Was Updated")
-}
-
-export function viewAllProjects() {
-    viewAll.addEventListener("click", function() {
-        statusUpdates.setViewAll(true);
-        updateContent();
-    })
-}
-
-const saveProject = function(project) {
-    const name = document.getElementById("edit-title").value
-    project.projectName = name
-    // console.log("Saved Project Title")
-   for (let i = 0; i < project.projectTasks.length; i++) {
-    project.projectTasks[i].name = document.getElementById(`taskName${i}`).value
-    project.projectTasks[i].description = document.getElementById(`taskDescription${i}`).value
-    }
-
-    if (project.projectIndex === "new") {
-        const obj = {...newProject};
-        obj.projectIndex = projects.length + 1
-        projects.push(obj)
-        clearObject(newProject);
-        // console.log(projects)
-    }
-
-    updateListsDisplay(projects, projectsContent)
-    updateContent();
-    statusUpdates.clickedSave = false;
-
-}
-
-function editProject(project, mainCont, subContainer, projectName, index, targetId) {
-    containerUtilities.clearMainContainer()
-    const newDiv = CreateDiv("project-edit","",project, "" )
-    const editProjectContainer = CreateDiv("project-title-container", "","","")
-    const editProjectTitle = CreateInput("project-title", projectName,"edit-title" )
-    const saveButton = CreateDiv("save-button", "Save", "save-button", index)
-    const addTaskButton = CreateDiv("add-task-button", "Add Task", "add-task")
-
-
-    saveButton.dataset.key = targetId
-    editProjectTitle.innerHTML = `<input type="text" id="name" name="name" required minlength="4" maxlength="8" size="10" />`
-    editProjectTitle.value = projectName
-
-    saveButton.addEventListener("click", function(e) {
-        statusUpdates.setClickedSave(true);
-            saveProject(project)
-    })
-
-    addTaskButton.addEventListener("click", function() {
-        let obj = {name: "Task Name", description: "Task Description", status: "Not Completed"}
-        project.projectTasks.push(obj)
-        //This allows us to save whatever tasks we edited when we add a new task. 
-        // This cycles every project task minus the last one added (New Task) because
-        // New Task doesnt have a div assigned to it yet as we havent called editProject yet. 
-        const word = document.getElementById("edit-title").value
-        projectName = word
-        for (let i = 0; i < project.projectTasks.length - 1; i++) {
-            project.projectTasks[i].name = document.getElementById(`taskName${i}`).value
-            project.projectTasks[i].description = document.getElementById(`taskDescription${i}`).value
-            }
-        project.projectName = document.getElementById("edit-title").value
-        editProject(project, mainCont, subContainer, projectName, index, targetId);
-    })
-
-    editProjectContainer.appendChild(editProjectTitle)
-    editProjectContainer.appendChild(addTaskButton)
-    editProjectContainer.appendChild(saveButton)
-    newDiv.appendChild(editProjectContainer);
-    editProjectTasks(project, newDiv, editProjectContainer)
-    mainContainer.appendChild(newDiv)
-
-}
-
-const updateProjectTasks = function(project, mainContainer,) 
-{   
-    if (project.projectTasks && Array.isArray(project.projectTasks)) {
-        let index = 0;
-        for (let task of project.projectTasks ) {
-            const taskDiv = document.createElement("div")
-            const titleDiv = document.createElement("div")
-            const statusContainer = document.createElement("div")
-            taskDiv.id = `taskDiv${index}`
-            taskDiv.className = "taskContainer"
-            titleDiv.className = "taskTitle"
-            let taskStatusText = document.createElement("div")
-            let taskName = document.createElement("div")
-            let taskDescription = document.createElement("div")
-            let taskStatus = document.createElement("input")
-            taskStatusText.innerHTML = task.status
-            taskStatus.id = index
-            taskStatus.type = "checkbox"
-            taskStatus.addEventListener("click", function(e){
-                toggleStatus(project, e)
-                if (statusUpdates.viewAll === true){
-                        updateContent()
                 } else {
-                    updateSingleProjectView(project.projectIndex - 1)
+                    projectListContainer.appendChild(tasksContainerDiv)
+                    completedTasksContainer.appendChild(projectListContainer)
                 }
-            })
-            taskName.innerHTML = task.name
-            taskDescription.innerHTML = task.description
-            
-            checkStatus(task, taskDiv)
-            statusContainer.className = "statusContainer"
-            statusContainer.appendChild(taskStatusText)
-            statusContainer.appendChild(taskStatus)
-            titleDiv.appendChild(taskName)
-            titleDiv.appendChild(statusContainer)
-            taskDiv.appendChild(titleDiv)
-            taskDiv.appendChild(taskDescription)
-            mainContainer.appendChild(taskDiv)
-            index++
+
+            }
+        }
+
+    }
+}
+
+function addNewProject() {
+    const obj = structuredClone(newProject)
+    projects.push(obj)
+    const newIndex = projects.length - 1
+
+    displayProjects("edit", "single", newIndex)
+}
+
+export function setEvents() {
+    const viewAllProjectsButton = document.querySelector("#view-all-button")
+    const addNewProjectButton = document.querySelector("#add-new-project-button")
+    viewAllProjectsButton.addEventListener("click", () => {
+        globalStatus.view = "all"
+        globalStatus.style = "view"
+        displayProjects("view")
+    })
+    addNewProjectButton.addEventListener("click", () => {
+        addNewProject()
+    })
+}
+
+function removeTask(task, projectIndex) {
+    projects[projectIndex].projectTasks = projects[projectIndex].projectTasks.filter(object => object !== task)
+}
+
+function removeProject(project) {
+    projects = projects.filter(obj => obj !== project)
+}
+
+
+function updateProjectsList() {
+    const projectsListContainer = document.querySelector(".projects-list-container")
+    projectsListContainer.innerHTML = ""
+    for (let project of projects) {
+        const list = document.createElement("button")
+        list.innerText = project.projectName
+        list.id = projects.indexOf(project)
+        list.dataset.buttons = "list-buttons"
+        list.className = "project-buttons"
+        list.addEventListener("click", () => {
+
+            displayProjects("view", "single", list.id)
+        })
+        projectsListContainer.appendChild(list)
+    }
+}
+
+function changeTaskStatus(element, taskStatus, task) {
+    if (task.status === true) {
+        element.style.backgroundColor = "rgb(235 209 178)"
+        element.classList.add("strike")
+        taskStatus.checked = true
+        updateCompletedTasksList()
+    } else {
+        element.style.backgroundColor = "rgb(255, 244, 230"
+        taskStatus.checked = false
+        element.classList.remove("strike")
+        updateCompletedTasksList()
+    }
+}
+
+export const globalStatus = {
+    view: "all",
+    style: "view",
+    getStatus: function() {
+        // Return an object with the current status
+        return {
+            view: this.view,
+            style: this.style
         };
     }
+};
 
+function addNewTask(project) {
+    const obj = {
+        name: `Task ${project.projectTasks.length + 1}`,
+        description: `Task Description ${project.projectTasks.length + 1}`,
+        status: false
+    }
+    project.projectTasks.push(obj)
 }
 
-const editProjectTasks = function(project, newDiv, subContainer) {
-    let index = 0
-    for (let task of project.projectTasks ) {
-        const taskDiv = document.createElement("input")
-        const taskDescriptionContainer = document.createElement("div")
-        const taskDescription = document.createElement("input")
-        const taskX = document.createElement("div")        
+function saveProject(element, project) {
+        project.projectName = element.projectName.value
+        let index = 0
+        for (let task of project.projectTasks) {
 
-        taskDescriptionContainer.id = "task-description-bar"
-        taskDescription.innerHTML = `<input type="text" name="${task.name}" required minlength="4" maxlength="40" size="15" />`
-        taskX.innerHTML = "X"
-        taskX.id = index
-        taskX.dataset.key = project.projectIndex - 1
-        taskDiv.innerHTML = `<input type="text" name="task${index}" required minlength="4" maxlength="40" size="15" />`
-        taskDiv.id = `taskDescription${index}`
-        taskDiv.value = task.description
-        taskDescription.value = task.name
-        taskDescription.id = `taskName${index}`
-        if (statusUpdates.clickedSave) {
-            project.projectTasks.name = taskDescription.value
-            project.projectTasks.description = taskDiv.value
-            // console.log(project)
+            task.name = document.querySelector(`#name${index}`).value
+            task.description = document.querySelector(`#description${index}`).value
+            index++
         }
+}
+function createProjectElement(style) {
+    const mainContainer = document.createElement(`div`)
+    const projectNameContainer = document.createElement("div")
+    if (style === "view") {
+        const projectName = document.createElement(`div`)
+        const editProjectButton =  document.createElement("button")
+        const deleteProjectButton = document.createElement("button")
+        return{
+            mainContainer,
+            projectNameContainer,
+            projectName,
+            editProjectButton,
+            deleteProjectButton
+        }
+    } else {
+        const projectName = document.createElement(`input`)
+        const addTaskButton = document.createElement("button")
+        const saveButton = document.createElement("button")
+        const deleteProjectButton = document.createElement("button")
+        return {
+            mainContainer,
+            projectNameContainer,
+            projectName,
+            addTaskButton,
+            saveButton,
+            deleteProjectButton
+        }
+    }
+}
 
-        taskX.addEventListener("click", function() {
-            removeTask(project, task, index)
-            // console.log(project.projectTasks)
-            editProject(project, newDiv, subContainer, project.projectName, index);
+function setProjectElement(element, style, project, index) {
+    element.mainContainer.className = "project-container"
+    element.projectNameContainer.className = "project-name-container"
+    element.projectName.className = "project-name"
+    if (style === "view") {
+        element.editProjectButton.className = "add-task-button"
+        element.editProjectButton.innerText = "Edit Project"
+        element.editProjectButton.id = index;
+        element.deleteProjectButton.className = "delete-project-button"
+        element.deleteProjectButton.innerText = "Delete Project"
+        element.projectName.innerText = project.projectName;
+
+        element.editProjectButton.addEventListener("click", () => {
+            displayProjects("edit", "single", index)
         })
 
-        taskDescriptionContainer.appendChild(taskDescription)
-        taskDescriptionContainer.appendChild(taskX)
-        newDiv.appendChild(taskDescriptionContainer)
-        newDiv.appendChild(taskDiv)
-        index++
-    }
-    
-}
+        element.deleteProjectButton.addEventListener("click", () => {
+            removeProject(project)
+            updateCompletedTasksList()
+            displayProjects("view", "all")
+        })
 
+        element.projectNameContainer.appendChild(element.projectName)
+        element.projectNameContainer.appendChild(element.editProjectButton)
+        element.projectNameContainer.appendChild(element.deleteProjectButton)
+        element.mainContainer.appendChild(element.projectNameContainer)
+        
+        return element.mainContainer
 
-const toggleStatus = function(project,e) {
-    if (project.projectTasks[e.target.id].status === "Completed") {
-        project.projectTasks[e.target.id].status = "Not Completed"
-        // console.log(project.projectTasks[e.target.id])
     } else {
-        project.projectTasks[e.target.id].status = "Completed"
-    
+
+        element.projectName.value = project.projectName
+        element.addTaskButton.className = "add-task-button"
+        element.addTaskButton.innerText = "Add New Task"
+        element.saveButton.className = "save-button"
+        element.saveButton.innerText = "Save"
+        element.deleteProjectButton.className = "delete-project-button"
+        element.deleteProjectButton.innerText = "Delete Project"
+        element.projectName.innerText = project.projectName
+
+        element.addTaskButton.addEventListener("click", () => {
+            addNewTask(project)
+            displayProjects("edit", "single", index)
+
+        })
+
+        element.saveButton.addEventListener("click", () => {
+            saveProject(element, project)
+            displayProjects(globalStatus.getStatus().style, globalStatus.getStatus().view, index)
+        })
+
+        element.projectNameContainer.appendChild(element.projectName)
+        element.projectNameContainer.appendChild(element.addTaskButton)
+        element.projectNameContainer.appendChild(element.saveButton)
+        element.mainContainer.appendChild(element.projectNameContainer)
+        
+        return element.mainContainer
+
+
     }
+} 
+// THIS IS NEXT!!!!
+function setTaskElement(element, style, task, index, projectIndex) {
 
-}
+        element.taskContainer.className = "task-container"
+        element.taskNameContainer.className = "task-name-container"
+        element.taskDescriptionContainer.className = "task-description-container"
 
-const checkStatus = function(task, div) {
-    if (task.status === "Completed") {
-        div.style.backgroundColor = "#f0b429"
+    if (style === "view") {
+        element.taskName.className = "task-name"
+        element.taskName.innerText = task.name
+        element.taskName.id = `name${index}`
+        element.taskStatus.type = "checkbox"
+
+        // Need to add "Complete" and "Not Complete" strings to the left of checkbox
+        element.taskStatus.innerHTML = "Not Complete"
+        element.taskStatus.innerText = task.status
+        element.taskStatus.id = `status${index}`
+        element.taskDescription.id = `description${index}`
+
+        element.taskDescription.className = "task-description"
+        element.taskDescription.innerText = task.description
+
+        element.taskStatus.addEventListener("change", () => {
+            if (element.taskStatus.checked === true) {
+                task.status = true
+            } else {
+                task.status = false
+            }
+            changeTaskStatus(element.taskContainer, element.taskStatus, task)
+        })
+
+        changeTaskStatus(element.taskContainer,element.taskStatus, task)
+
+        element.taskNameContainer.appendChild(element.taskName)
+        element.taskNameContainer.appendChild(element.taskStatus)
+        element.taskContainer.appendChild(element.taskNameContainer)
+        element.taskDescriptionContainer.appendChild(element.taskDescription)
+        element.taskContainer.appendChild(element.taskDescriptionContainer)
+
+        return element.taskContainer
     } else {
-        div.style.backgroundColor = "rgb(224 202 125)"
+
+        element.taskName.className = "task-name"
+        element.taskName.value = task.name
+        element.taskName.id = `name${index}`
+        element.taskDescription.id = `description${index}`
+      
+        element.deleteTaskButton.className = "delete-task-button"
+        element.deleteTaskButton.innerText = "X"
+        element.taskDescription.className = "task-description"
+        element.taskDescription.value = task.description
+
+        element.deleteTaskButton.addEventListener("click", () => {
+            removeTask(task, projectIndex)
+            updateCompletedTasksList()
+            displayProjects("edit", "single", projectIndex)
+        })
+        
+        element.taskNameContainer.appendChild(element.taskName)
+        element.taskNameContainer.appendChild(element.deleteTaskButton)
+        element.taskContainer.appendChild(element.taskNameContainer)
+        element.taskDescriptionContainer.appendChild(element.taskDescription)
+        element.taskContainer.appendChild(element.taskDescriptionContainer)
+
+        return element.taskContainer
     }
 }
 
-// Not Implemented Yet
-const userSection = function() {
-    const content = CreateDiv("user-bar", "User Bar")
-    return content
+function createTaskElement(style) {
+    const taskContainer = document.createElement("div")
+    const taskNameContainer = document.createElement("div")
+    const taskDescriptionContainer = document.createElement("div")
+
+    if (style === "view") {
+        const taskName = document.createElement("div")
+        const taskStatus = document.createElement("input")
+        const taskDescription = document.createElement("div")
+        return {
+            taskContainer,
+            taskNameContainer,
+            taskName,
+            taskStatus,
+            taskDescriptionContainer,
+            taskDescription
+        }
+    } else {
+        const taskName = document.createElement("input")
+        const deleteTaskButton = document.createElement("button")
+        const taskDescription = document.createElement("input")
+        return {
+            taskContainer,
+            taskNameContainer,
+            taskName,
+            deleteTaskButton,
+            taskDescriptionContainer,
+            taskDescription
+        }
+    }
 }
 
+function clearContainer(element) {
+    element.innerHTML = ""
+}
 
-export const startEvent = function() {
-    projectsContent.addEventListener("click", function(e){
-    if (e.target.dataset.key !== undefined) {
-        // console.log(e.target.dataset.key)
-        updateSingleProjectView(e.target.dataset.key)
-    }
-})}
+export function displayProjects(style, view, projectIndex) {
+    updateProjectsList()
+    clearContainer(projectsContainer)
+    if (view === "single") {
+        const container = document.createElement("div")
+        container.className = "main-container"
+        const projectElement = createProjectElement(style)
+        const projectSet = setProjectElement(projectElement, style, projects[projectIndex], projectIndex)
+
+        container.appendChild(projectSet)
+        let index = 0
+        for (let task of projects[projectIndex].projectTasks) {
+            const taskElement = createTaskElement(style)
+            const taskSet = setTaskElement(taskElement, style, task, index, projectIndex)
+            container.appendChild(taskSet)
+            index++
+        }
+        projectsContainer.appendChild(container)
+            
+        } else {
+        
+        for (let project of projects) {
+            const container = document.createElement("div")
+            container.className = "main-container"
+            const projectElement = createProjectElement(style)
+            const projectSet = setProjectElement(projectElement, style, project, projects.indexOf(project))
+
+            container.appendChild(projectSet)
+            let index = 0
+            for (let task of project.projectTasks) {
+                const taskElement = createTaskElement(style)
+                const taskSet = setTaskElement(taskElement, style, task,)
+                container.appendChild(taskSet)
+                index++
+            }
+
+            projectsContainer.appendChild(container)
+
+        } 
+
+        }
+}
+
