@@ -50,6 +50,10 @@ button {
     background-color: azure;
 }
 
+#user-bar {
+    align-self: center;
+}
+
 .nav-bar {
     text-align: center;
 }
@@ -70,7 +74,7 @@ button {
 .completed-tasks-container {
     width: 90%;
     border-radius: 4px;
-    padding: 5px;
+    padding: 0 5px 0 5px;
     background-color: #66d4b0;
 }
 .tasks-list-container {
@@ -134,6 +138,10 @@ input {
     display: flex;
     font-size: 22px;
     font-weight: 500;
+}
+
+input.project-name {
+    border: 3px solid rgba(165, 42, 42, 0.092);
 }
 
 .project-name-container {

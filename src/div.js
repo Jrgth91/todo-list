@@ -1,11 +1,13 @@
-import { projects, newProject } from "./content"
+import { projects, newProject, saveLocalStorage, clearLocalStorage, readLocalStorage, convertDate, addNewProject,
+removeTask, removeProject, addNewTask } from "./content"
+import { endOfDay, format, formatDistance, formatRelative, subDays } from 'date-fns'
+
 const PROJECT_TEMPLATE = document.getElementById("projectTemplate")
 const TASK_TEMPLATE = document.getElementById("taskTemplate")
 const projectsContainer = document.querySelector(".projects-container")
 const completedTasksContainer = document.querySelector(".completed-tasks-container")
 
 
-//// THIS MAKES NO SENSE ITS MOVING EVERYTHING TO THE TASK CONTAINER!? 
 function updateCompletedTasksList() {
     completedTasksContainer.innerHTML = ""
     for (const project of projects) {
@@ -46,17 +48,12 @@ function updateCompletedTasksList() {
     }
 }
 
-function addNewProject() {
-    const obj = structuredClone(newProject)
-    projects.push(obj)
-    const newIndex = projects.length - 1
-
-    displayProjects("edit", "single", newIndex)
-}
 
 export function setEvents() {
     const viewAllProjectsButton = document.querySelector("#view-all-button")
     const addNewProjectButton = document.querySelector("#add-new-project-button")
+    const deleteLocalStorageButton = document.querySelector(".clear-data-button")
+
     viewAllProjectsButton.addEventListener("click", () => {
         globalStatus.view = "all"
         globalStatus.style = "view"
@@ -65,14 +62,15 @@ export function setEvents() {
     addNewProjectButton.addEventListener("click", () => {
         addNewProject()
     })
-}
-
-function removeTask(task, projectIndex) {
-    projects[projectIndex].projectTasks = projects[projectIndex].projectTasks.filter(object => object !== task)
-}
-
-function removeProject(project) {
-    projects = projects.filter(obj => obj !== project)
+    deleteLocalStorageButton.addEventListener("click", () => {
+        //MAKE PROMPT ACTUALLY WORK, CHANGE IT TO YES OR NO 
+        const text = "Are You Sure? This will delete ALL of the projects on this device."
+        if (confirm(text) === true) {
+            clearLocalStorage()
+            projects = []
+            displayProjects("view", "all")  
+        }
+    })
 }
 
 
@@ -119,24 +117,25 @@ export const globalStatus = {
     }
 };
 
-function addNewTask(project) {
-    const obj = {
-        name: `Task ${project.projectTasks.length + 1}`,
-        description: `Task Description ${project.projectTasks.length + 1}`,
-        status: false
-    }
-    project.projectTasks.push(obj)
-}
-
 function saveProject(element, project) {
         project.projectName = element.projectName.value
         let index = 0
         for (let task of project.projectTasks) {
-
+            let dates = null
             task.name = document.querySelector(`#name${index}`).value
             task.description = document.querySelector(`#description${index}`).value
+            if (document.querySelector(`#date${index}`)) {
+                const parent = document.querySelector(`#date${index}`)
+                const child = parent.querySelector(':first-child').value
+                dates =  convertDate("save", child)
+                console.log(child)
+            }
+            task.date = dates
             index++
         }
+        saveLocalStorage(projects)
+        console.log(projects)
+        console.log(localStorage)
 }
 function createProjectElement(style) {
     const mainContainer = document.createElement(`div`)
@@ -186,6 +185,7 @@ function setProjectElement(element, style, project, index) {
 
         element.deleteProjectButton.addEventListener("click", () => {
             removeProject(project)
+            saveLocalStorage(projects)
             updateCompletedTasksList()
             displayProjects("view", "all")
         })
@@ -236,12 +236,23 @@ function setTaskElement(element, style, task, index, projectIndex) {
         element.taskNameContainer.className = "task-name-container"
         element.taskDescriptionContainer.className = "task-description-container"
 
+
+        element.taskDate.innerHTML = task.date 
+    
+        // format(new Date(), "yyyy-MM-dd'T'HH:mm:ss.SSS"))
+        //THIS GIVES THE VALUE 
+        // Current Date Value 2024-04-24T14:23:45.244, Need to filter this out and 
+        // add vale to each task object so it doesnt update every refresh.
+        // maybe create a factory function to create new objects each time a new task is added?
+        //or better yet actually add a taskDate to the object 
+
     if (style === "view") {
         element.taskName.className = "task-name"
         element.taskName.innerText = task.name
         element.taskName.id = `name${index}`
         element.taskStatus.type = "checkbox"
-
+        element.taskDate.innerHTML = task.date
+        element.taskDate.id = `date${index}`
         // Need to add "Complete" and "Not Complete" strings to the left of checkbox
         element.taskStatus.innerHTML = "Not Complete"
         element.taskStatus.innerText = task.status
@@ -258,11 +269,13 @@ function setTaskElement(element, style, task, index, projectIndex) {
                 task.status = false
             }
             changeTaskStatus(element.taskContainer, element.taskStatus, task)
+            saveLocalStorage(projects)
         })
 
         changeTaskStatus(element.taskContainer,element.taskStatus, task)
 
         element.taskNameContainer.appendChild(element.taskName)
+        element.taskNameContainer.appendChild(element.taskDate)
         element.taskNameContainer.appendChild(element.taskStatus)
         element.taskContainer.appendChild(element.taskNameContainer)
         element.taskDescriptionContainer.appendChild(element.taskDescription)
@@ -275,7 +288,8 @@ function setTaskElement(element, style, task, index, projectIndex) {
         element.taskName.value = task.name
         element.taskName.id = `name${index}`
         element.taskDescription.id = `description${index}`
-      
+        element.taskDate.id = `date${index}`
+        element.taskDate.innerHTML = `<input type="date" value="${convertDate("edit", task.date)}">`
         element.deleteTaskButton.className = "delete-task-button"
         element.deleteTaskButton.innerText = "X"
         element.taskDescription.className = "task-description"
@@ -288,6 +302,7 @@ function setTaskElement(element, style, task, index, projectIndex) {
         })
         
         element.taskNameContainer.appendChild(element.taskName)
+        element.taskNameContainer.appendChild(element.taskDate)
         element.taskNameContainer.appendChild(element.deleteTaskButton)
         element.taskContainer.appendChild(element.taskNameContainer)
         element.taskDescriptionContainer.appendChild(element.taskDescription)
@@ -301,6 +316,7 @@ function createTaskElement(style) {
     const taskContainer = document.createElement("div")
     const taskNameContainer = document.createElement("div")
     const taskDescriptionContainer = document.createElement("div")
+    const taskDate = document.createElement("div")
 
     if (style === "view") {
         const taskName = document.createElement("div")
@@ -310,6 +326,7 @@ function createTaskElement(style) {
             taskContainer,
             taskNameContainer,
             taskName,
+            taskDate,
             taskStatus,
             taskDescriptionContainer,
             taskDescription
@@ -322,6 +339,7 @@ function createTaskElement(style) {
             taskContainer,
             taskNameContainer,
             taskName,
+            taskDate,
             deleteTaskButton,
             taskDescriptionContainer,
             taskDescription
